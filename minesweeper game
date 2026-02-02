@@ -1,0 +1,143 @@
+#include <iostream>
+#include <cstdlib>
+#include <ctime>
+#include <fstream>
+using namespace std;
+
+const int SIZE = 10;
+const int MINES = 10;
+
+char board[SIZE][SIZE];
+char display[SIZE][SIZE];
+
+struct Player {
+    string name;
+    int moves;
+};
+
+void initializeBoards()
+{
+    for(int i=0;i<SIZE;i++)
+        for(int j=0;j<SIZE;j++)
+        {
+            board[i][j] = '0';
+            display[i][j] = '*';
+        }
+}
+
+void printDisplay()
+{
+    for(int i=0;i<SIZE;i++)
+    {
+        for(int j=0;j<SIZE;j++)
+            cout << display[i][j] << " ";
+        cout << endl;
+    }
+}
+
+void mineplace()
+{
+    int placed = 0;
+    while(placed < MINES)
+    {
+        int x = rand() % SIZE;
+        int y = rand() % SIZE;
+        if(board[x][y] != 'M')
+        {
+            board[x][y] = 'M';
+            placed++;
+        }
+    }
+}
+
+void calculateNumber()
+{
+    for(int i=0;i<SIZE;i++)
+        for(int j=0;j<SIZE;j++)
+        {
+            if(board[i][j] == 'M') 
+				continue;
+
+            int count = 0;
+            for(int a=i-1;a<=i+1;a++)
+                for(int b=j-1;b<=j+1;b++)
+                    if(a>=0 && a<SIZE && b>=0 && b<SIZE)
+                        if(board[a][b]=='M')
+                            count++;
+
+            board[i][j] = '0' + count;
+        }
+}
+
+void reveal(int x,int y)
+{
+    display[x][y] = board[x][y];
+}
+
+bool checkWin()
+{
+    int hidden = 0;
+    for(int i=0;i<SIZE;i++)
+        for(int j=0;j<SIZE;j++)
+            if(display[i][j]=='*')
+                hidden++;
+
+    return hidden == MINES;
+}
+
+int main()
+{
+    srand(time(0));
+
+    Player p;
+    p.moves = 0;
+
+    cout << "Enter player name: ";
+    cin >> p.name;
+
+    initializeBoards();
+    mineplace();
+    calculateNumber();
+
+    cout << "Minesweeper Game\n";
+
+    while(true)
+    {
+        printDisplay();
+        int x,y;
+        cout << "Enter row and column: ";
+        cin >> x >> y;
+        p.moves++;
+
+        if(board[x][y]=='M')
+        {
+            cout << "You hit a mine. Game Over!\n";
+
+            for(int i=0;i<SIZE;i++)
+                for(int j=0;j<SIZE;j++)
+                    if(board[i][j]=='M')
+                        display[i][j]='M';
+
+            printDisplay();
+
+            ofstream file("record.txt", ios::app);
+            file << p.name << " LOST in " << p.moves << " moves\n";
+            file.close();
+            break;
+        }
+
+        reveal(x,y);
+
+        if(checkWin())
+        {
+            cout << "You cleared the board!\n";
+            printDisplay();
+
+            ofstream file("record.txt", ios::app);
+            file << p.name << " WON in " << p.moves << " moves\n";
+            file.close();
+            break;
+        }
+    }
+    return 0;
+}
